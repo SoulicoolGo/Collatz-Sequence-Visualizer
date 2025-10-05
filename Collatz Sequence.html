@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collatz Sequence Visualizer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+            background: linear-gradient(to bottom right, #f0faff, #d9f9ff);
+        }
+        h2 {
+            color: #007799;
+        }
+        input, button {
+            margin: 5px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #aaa;
+        }
+        button {
+            background-color: #007799;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #005577;
+        }
+        #outputMessage {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        canvas {
+            margin-top: 20px;
+            max-width: 90%;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h2>Collatz Sequence Visualizer</h2>
+        <p>Formula: If n is even → n / 2; if n is odd → 3n + 1</p>
+        <input type="number" id="seedInput" placeholder="Enter a seed (positive integer)">
+        <button id="inputButton">Run Sequence</button>
+        <button id="autoButton">Start Auto Mode</button>
+        <div id="outputMessage"></div>
+    </div>
+
+    <canvas id="collatzChart" width="400" height="200"></canvas>
+    
+    <script>
+        const inputButton = document.getElementById('inputButton');
+        const autoButton = document.getElementById('autoButton');
+        const outputMessage = document.getElementById('outputMessage');
+        const seedInput = document.getElementById('seedInput');
+        const ctx = document.getElementById('collatzChart').getContext('2d');
+
+        let collatzChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Collatz Sequence',
+                    data: [],
+                    borderColor: 'rgba(0, 119, 153, 1)',
+                    backgroundColor: 'rgba(0, 119, 153, 0.2)',
+                    fill: false,
+                    tension: 0.2,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                animation: {
+                    duration: 1000,
+                    easing: 'linear'
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Steps' } },
+                    y: { title: { display: true, text: 'Number' }, suggestedMin: 0 }
+                }
+            }
+        });
+
+        let autoMode = false;
+        let autoSeed = 1;
+
+        function calculateOutput(seed) {
+            let steps = [];
+            while (seed !== 1) {
+                steps.push(seed);
+                seed = seed % 2 === 0 ? seed / 2 : 3 * seed + 1;
+            }
+            steps.push(1);
+            return steps;
+        }
+
+        function updateChartSmooth(steps) {
+            collatzChart.data.labels = steps.map((_, i) => i + 1);
+            collatzChart.data.datasets[0].data = steps;
+            collatzChart.update();
+        }
+
+        inputButton.addEventListener('click', () => {
+            const seed = parseInt(seedInput.value);
+            if (isNaN(seed) || seed <= 0) {
+                outputMessage.textContent = "⚠️ Please enter a valid positive integer.";
+                return;
+            }
+            const steps = calculateOutput(seed);
+            const maxVal = Math.max(...steps);
+            outputMessage.textContent = `Input: ${seed} → Steps: ${steps.length - 1}, Max Value: ${maxVal}`;
+            updateChartSmooth(steps);
+        });
+
+        autoButton.addEventListener('click', () => {
+            if (autoMode) {
+                autoMode = false;
+                autoButton.textContent = "Start Auto Mode";
+                outputMessage.textContent = "⏹️ Auto mode stopped.";
+                return;
+            }
+
+            autoMode = true;
+            autoButton.textContent = "Stop Auto Mode";
+            outputMessage.textContent = "▶️ Auto mode started.";
+
+            const autoCollatz = () => {
+                if (!autoMode) return;
+                const steps = calculateOutput(autoSeed);
+                const maxVal = Math.max(...steps);
+                outputMessage.textContent = `Input: ${autoSeed} → Steps: ${steps.length - 1}, Max Value: ${maxVal}`;
+                updateChartSmooth(steps);
+                autoSeed++;
+                setTimeout(autoCollatz, 1200); // small delay between sequences
+            };
+            autoCollatz();
+        });
+    </script>
+</body>
+</html>
